@@ -1,20 +1,19 @@
-require('dotenv').config();
-const { Client } = require('pg');
-const express = require('express');
+require("dotenv").config();
+const { Client } = require("pg");
+const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const cors = require("cors");
 const app = express();
 const bcrypt = require("bcryptjs");
 
-app.set('view engine', ejs);
+app.set("view engine", ejs);
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static("public"));
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SECRET;
-
 
 // Function to generate a JWT token
 function generateToken(user) {
@@ -31,13 +30,12 @@ function generateToken(user) {
   return token;
 }
 
-
 // CONNNECTION FOR CLOUD PG
-const pool = new Client ({
-  user: 'postgres',
-  host: '129.150.47.67',
-  database: 'postgres',
-  password: 'gismap',
+const pool = new Client({
+  user: "postgres",
+  host: "129.150.47.67",
+  database: "postgres",
+  password: "gismap",
   port: 5432,
 });
 
@@ -50,20 +48,19 @@ const pool = new Client ({
 //     port: 5432,
 // });
 
-pool.connect ((err, client, done) => {
-    if (err) {
-        console.error('Error connecting to PostgreSQL: ', err);
-    } else {
-        console.log('Connected to PostgreSQL');
-    }
-   
+pool.connect((err, client, done) => {
+  if (err) {
+    console.error("Error connecting to PostgreSQL: ", err);
+  } else {
+    console.log("Connected to PostgreSQL");
+  }
 });
 
 // Function to create tables
 async function createTables() {
   try {
-      // Create the 'users' table if it doesn't exist
-      await pool.query(`
+    // Create the 'users' table if it doesn't exist
+    await pool.query(`
           CREATE TABLE IF NOT EXISTS users (
               id SERIAL PRIMARY KEY,
               name VARCHAR(255) NOT NULL,
@@ -73,8 +70,8 @@ async function createTables() {
           );
       `);
 
-      // Create the 'title_table' table if it doesn't exist
-      await pool.query(`
+    // Create the 'title_table' table if it doesn't exist
+    await pool.query(`
           CREATE TABLE IF NOT EXISTS title_table (
               id SERIAL PRIMARY KEY,
               title VARCHAR,
@@ -98,8 +95,8 @@ async function createTables() {
               username VARCHAR
           );
       `);
-            // Create the 'rptas_table' table if it doesn't exist
-            await pool.query(`
+    // Create the 'rptas_table' table if it doesn't exist
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS rptas_table (
                 id SERIAL PRIMARY KEY,
                 Pin VARCHAR,
@@ -125,8 +122,8 @@ async function createTables() {
             );
         `);
 
-        // Create the 'brgycode' table if it doesn't exist
-        await pool.query(`
+    // Create the 'brgycode' table if it doesn't exist
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS brgy_code (
             id SERIAL PRIMARY KEY,
             brgycode VARCHAR(255),
@@ -137,8 +134,8 @@ async function createTables() {
             poldistrict VARCHAR(255)
         );
     `);
-            // Create the 'monuments' table if it doesn't exist
-            await pool.query(`
+    // Create the 'monuments' table if it doesn't exist
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS monuments (
                 id SERIAL PRIMARY KEY,
                 monument VARCHAR(255),
@@ -146,31 +143,30 @@ async function createTables() {
                 northing VARCHAR(255)
             );
         `);
-  
 
-      console.log('Tables created or already exist.');
+    console.log("Tables created or already exist.");
   } catch (error) {
-      console.error('Error creating tables:', error);
+    console.error("Error creating tables:", error);
   }
 }
 
 // Call the createTables function to ensure tables exist
 createTables();
 //Console log Users Details
-pool.query (`Select * from users`, (err, res) => {
-    if(!err) {
-        console.log(res.rows);
-    } else {
-        console.log(err.message);
-    }
-    pool.end;
+pool.query(`Select * from users`, (err, res) => {
+  if (!err) {
+    console.log(res.rows);
+  } else {
+    console.log(err.message);
+  }
+  pool.end;
 });
 //Console log GIS Details
-pool.query (`Select * from title_table`, (err, res) => {
-  if(!err) {
-      console.log(res.rows);
+pool.query(`Select * from title_table`, (err, res) => {
+  if (!err) {
+    console.log(res.rows);
   } else {
-      console.log(err.message);
+    console.log(err.message);
   }
   pool.end;
 });
@@ -180,26 +176,27 @@ const requireAuth = (req, res, next) => {
   const token = req.headers.authorization;
   console.log("Received Token:", token);
   if (!token) {
-    return res.status(401).json({ message: 'Unauthorized - Please provide a valid token' });
+    return res
+      .status(401)
+      .json({ message: "Unauthorized - Please provide a valid token" });
   }
 
-// Extract the token from the "Bearer" format
-const tokenParts = token.split(' ');
-const tokenValue = tokenParts[1];
+  // Extract the token from the "Bearer" format
+  const tokenParts = token.split(" ");
+  const tokenValue = tokenParts[1];
 
-// Verify the token
-jwt.verify(tokenValue, JWT_SECRET, (err,user, decoded) => {
-  if (err) {
-    // Token verification failed
-    console.error('Token Verification Error:', err);
-    return res.status(401).json({ message: 'Unauthorized - Invalid token' });
-  } else {
-    // Token is valid; 'decoded' contains the token payload
-    console.log('Token Payload:', decoded);
-    // Continue processing the request
-  }
+  // Verify the token
+  jwt.verify(tokenValue, JWT_SECRET, (err, user, decoded) => {
+    if (err) {
+      // Token verification failed
+      console.error("Token Verification Error:", err);
+      return res.status(401).json({ message: "Unauthorized - Invalid token" });
+    } else {
+      // Token is valid; 'decoded' contains the token payload
+      console.log("Token Payload:", decoded);
+      // Continue processing the request
+    }
 
-   
     req.user = user;
     next();
   });
@@ -207,60 +204,58 @@ jwt.verify(tokenValue, JWT_SECRET, (err,user, decoded) => {
 
 // Middleware to validate API key
 const validateAPIKey = (req, res, next) => {
-  const apiKey = req.headers['x-api-key'];
+  const apiKey = req.headers["x-api-key"];
 
   if (!apiKey) {
-  
-    return res.status(401).json({ message: 'Unauthorized - API key is missing' });
+    return res
+      .status(401)
+      .json({ message: "Unauthorized - API key is missing" });
   }
 
- 
-  if (apiKey === process.env.CLIENT_API_KEY) { // Replace with your stored API key
+  if (apiKey === process.env.CLIENT_API_KEY) {
+    // Replace with your stored API key
     next();
   } else {
-    console.log(apiKey)
+    console.log(apiKey);
     console.log(process.env.CLIENT_API_KEY);
-    return res.status(403).json({ message: 'Unauthorized - Invalid API key' });
+    return res.status(403).json({ message: "Unauthorized - Invalid API key" });
   }
 };
 
 //User Details
 
-app.get('/userDetail', requireAuth, async function (req, res) {
+app.get("/userDetail", requireAuth, async function (req, res) {
   try {
-    const result = await pool.query('SELECT * FROM users');
+    const result = await pool.query("SELECT * FROM users");
     res.json(result.rows);
   } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ status: 'error' });
+    console.error("Error fetching users:", error);
+    res.status(500).json({ status: "error" });
   }
 });
 
-
 //Create User
-app.post('/userDetail',requireAuth, async (req, res) => {
- 
+app.post("/userDetail", requireAuth, async (req, res) => {
   const { name, email, password, role } = req.body;
 
   try {
-   
     const hashedPassword = await bcrypt.hash(password, 10);
 
- 
-    const insertQuery = 'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)';
+    const insertQuery =
+      "INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)";
     const values = [name, email, hashedPassword, role];
 
     await pool.query(insertQuery, values);
-    console.log('User saved');
-    res.json({ status: 'ok' });
+    console.log("User saved");
+    res.json({ status: "ok" });
   } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ status: 'error' });
+    console.error("Error creating user:", error);
+    res.status(500).json({ status: "error" });
   }
 });
 
 //User Login
-app.post('/userLogin', async (req, res) => {
+app.post("/userLogin", async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -269,8 +264,9 @@ app.post('/userLogin', async (req, res) => {
 
     if (!user) {
       console.log("mao ni");
-      return res.status(401).json({ status: 'error', message: 'Invalid email or password' });
-     
+      return res
+        .status(401)
+        .json({ status: "error", message: "Invalid email or password" });
     }
 
     // Step 2: Validate the provided password with the stored hashed password
@@ -278,7 +274,9 @@ app.post('/userLogin', async (req, res) => {
 
     if (!isPasswordValid) {
       console.log("mao gyud ni");
-      return res.status(401).json({ status: 'error', message: 'Invalid email or password' });
+      return res
+        .status(401)
+        .json({ status: "error", message: "Invalid email or password" });
     }
 
     // Step 3: Generate a JWT token with user information
@@ -286,27 +284,26 @@ app.post('/userLogin', async (req, res) => {
 
     // Step 4: Send the token and user details in the response
     res.json({
-      status: 'ok',
-      message: 'Login successful',
+      status: "ok",
+      message: "Login successful",
       token,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
-       
       },
     });
     console.log(user.id, user.name, user.email, user.role, token);
   } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({ status: 'error', message: 'Internal server error' });
+    console.error("Error during login:", error);
+    res.status(500).json({ status: "error", message: "Internal server error" });
   }
 });
 
 // Function to fetch user by email from the database
 async function getUserByEmail(email) {
-  const selectQuery = 'SELECT * FROM users WHERE email = $1';
+  const selectQuery = "SELECT * FROM users WHERE email = $1";
   const values = [email];
 
   const result = await pool.query(selectQuery, values);
@@ -319,34 +316,28 @@ function generateToken(user) {
     { userId: user.id, name: user.name, email: user.email, role: user.role },
     JWT_SECRET,
     {
-      expiresIn: '7d', 
+      expiresIn: "7d",
     }
   );
   return token;
 }
 
-
-
-app.get('/GisDetail',requireAuth, async function(req, res) {
+app.get("/GisDetail", requireAuth, async function (req, res) {
   const token = req.headers.authorization;
   console.log("Received Token:", token);
 
   try {
-
-    const { rows } = await pool.query('SELECT * FROM title_table');
+    const { rows } = await pool.query("SELECT * FROM title_table");
     res.json(rows);
-
   } catch (error) {
-    console.error('Error fetching GIS details:', error);
-    res.status(500).json({ status: 'error' });
+    console.error("Error fetching GIS details:", error);
+    res.status(500).json({ status: "error" });
   }
-
 });
 
-app.post("/GisDetail",requireAuth, async function(req, res){
+app.post("/GisDetail", requireAuth, async function (req, res) {
   try {
-    console.log('Received request body:', req.body);
- 
+    console.log("Received request body:", req.body);
 
     const {
       title,
@@ -367,30 +358,48 @@ app.post("/GisDetail",requireAuth, async function(req, res){
       geojson,
       status,
       username,
-     
     } = req.body;
 
     const geojsonFormat = JSON.parse(geojson);
     const geoType = geojsonFormat.geometry.type;
     const coordinates = geojsonFormat.geometry.coordinates;
     await pool.query(
-      'INSERT INTO title_table (title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, tecnicaldescription, technicaldescremarks, pluscode, geojson, the_geom, status, username) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, ST_SetSRID(ST_GeomFromGeoJSON($17), 4326), $18, $19)',
-  [title, titleDate, surveyNumber, lotNumber, blkNumber, area, boundary, ownerName, oct, octDate, tct, tctDate, technicalDescription,  technicaldescremarks, plusCode, JSON.stringify(geojsonFormat), JSON.stringify({ type: geoType, coordinates }), status,username]
+      "INSERT INTO title_table (title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, tecnicaldescription, technicaldescremarks, pluscode, geojson, the_geom, status, username) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, ST_SetSRID(ST_GeomFromGeoJSON($17), 4326), $18, $19)",
+      [
+        title,
+        titleDate,
+        surveyNumber,
+        lotNumber,
+        blkNumber,
+        area,
+        boundary,
+        ownerName,
+        oct,
+        octDate,
+        tct,
+        tctDate,
+        technicalDescription,
+        technicaldescremarks,
+        plusCode,
+        JSON.stringify(geojsonFormat),
+        JSON.stringify({ type: geoType, coordinates }),
+        status,
+        username,
+      ]
     );
 
-    console.log('GIS Details Saved');
+    console.log("GIS Details Saved");
     res.json({ status: "ok" });
   } catch (error) {
-    console.error('Error saving GIS details:', error);
+    console.error("Error saving GIS details:", error);
     res.status(500).json({ status: "error" });
   }
 });
 
 //Update Data
-app.put('/GisDetail/:id',requireAuth, async (req, res) => {
+app.put("/GisDetail/:id", requireAuth, async (req, res) => {
   try {
-
-    console.log('Received request body:', req.body);
+    console.log("Received request body:", req.body);
     const { id } = req.params;
     const {
       title,
@@ -409,8 +418,6 @@ app.put('/GisDetail/:id',requireAuth, async (req, res) => {
       technicaldescremarks,
       plusCode,
       geojson,
-  
-     
     } = req.body;
 
     // Define the SQL query to update the 'status' field
@@ -454,21 +461,23 @@ app.put('/GisDetail/:id',requireAuth, async (req, res) => {
       technicaldescremarks,
       plusCode,
       geojson,
-      id]);
+      id,
+    ]);
 
-    console.log('Status field updated successfully');
-    res.json({ status: 'ok', message: 'Status field updated successfully' });
+    console.log("Status field updated successfully");
+    res.json({ status: "ok", message: "Status field updated successfully" });
   } catch (error) {
-    console.error('Error updating status field:', error);
-    res.status(500).json({ status: 'error', message: 'Error updating status field' });
+    console.error("Error updating status field:", error);
+    res
+      .status(500)
+      .json({ status: "error", message: "Error updating status field" });
   }
 });
 
 // Update status by id
-app.put('/approved/:id', async (req, res) => {
+app.put("/approved/:id", async (req, res) => {
   try {
-
-    console.log('Received request body:', req.body);
+    console.log("Received request body:", req.body);
     const { id } = req.params;
     const { status } = req.body;
 
@@ -482,19 +491,20 @@ app.put('/approved/:id', async (req, res) => {
     // Execute the update query
     await pool.query(updateQuery, [status, id]);
 
-    console.log('Status field updated successfully');
-    res.json({ status: 'ok', message: 'Status field updated successfully' });
+    console.log("Status field updated successfully");
+    res.json({ status: "ok", message: "Status field updated successfully" });
   } catch (error) {
-    console.error('Error updating status field:', error);
-    res.status(500).json({ status: 'error', message: 'Error updating status field' });
+    console.error("Error updating status field:", error);
+    res
+      .status(500)
+      .json({ status: "error", message: "Error updating status field" });
   }
 });
 
-
 app.put("/updateTitle/:id", async (req, res) => {
   try {
-    const { id } = req.params; 
-    const { 
+    const { id } = req.params;
+    const {
       title,
       titleDate,
       surveyNumber,
@@ -509,7 +519,7 @@ app.put("/updateTitle/:id", async (req, res) => {
       technicaldescremarks,
       plusCode,
       geojson,
-     } = req.body; 
+    } = req.body;
 
     // Define the SQL query to update the 'title' field
     const updateQuery = ` 
@@ -532,7 +542,6 @@ app.put("/updateTitle/:id", async (req, res) => {
     WHERE id = $15
   `;
 
-
     await pool.query(updateQuery, [
       title,
       titleDate,
@@ -549,44 +558,45 @@ app.put("/updateTitle/:id", async (req, res) => {
       plusCode,
       geojson,
 
-      id, 
+      id,
     ]);
 
-    console.log('Title field updated successfully');
+    console.log("Title field updated successfully");
     res.json({ status: "ok", message: "Title field updated successfully" });
   } catch (error) {
-    console.error('Error updating title field:', error);
-    res.status(500).json({ status: "error", message: "Error updating title field" });
+    console.error("Error updating title field:", error);
+    res
+      .status(500)
+      .json({ status: "error", message: "Error updating title field" });
   }
 });
 
 //List of Monuments
-app.get("/monuments", async function(req, res){
+app.get("/monuments", async function (req, res) {
   try {
-      const { rows } = await pool.query('SELECT * FROM monuments');
-      res.json(rows);
+    const { rows } = await pool.query("SELECT * FROM monuments");
+    res.json(rows);
   } catch (error) {
-      console.error('Error fetching Momuments:', error);
-      res.status(500).json({ status: "error" });
+    console.error("Error fetching Momuments:", error);
+    res.status(500).json({ status: "error" });
   }
 });
-
 
 //RPTAS_Table
 
-app.get("/tmod", validateAPIKey, async function(req, res){
+app.get("/tmod", validateAPIKey, async function (req, res) {
   try {
-      const { rows } = await pool.query('SELECT * FROM rptas_table');
-      res.json(rows);
+    const { rows } = await pool.query("SELECT * FROM rptas_table");
+    res.json(rows);
   } catch (error) {
-      console.error('Error fetching rptas_table:', error);
-      res.status(500).json({ status: "error" });
+    console.error("Error fetching rptas_table:", error);
+    res.status(500).json({ status: "error" });
   }
 });
 
-app.post("/tmod",requireAuth, async function(req, res){
+app.post("/tmod", requireAuth, async function (req, res) {
   try {
-    console.log('Received request body:', req.body);
+    console.log("Received request body:", req.body);
 
     const {
       pin,
@@ -608,42 +618,60 @@ app.post("/tmod",requireAuth, async function(req, res){
       tct,
       tctDate,
       status,
-     
     } = req.body;
 
     await pool.query(
-      'INSERT INTO rptas_table (pin, districtcode, brgycode, sectioncode, parcelid, pluscode, title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)',
-  [pin, districtCode,brgyCode, sectionCode, parcelCode, plusCode, title, titleDate, surveyNumber, lotNumber, blkNumber, area, boundary, ownerName, oct, octDate, tct, tctDate, status]
+      "INSERT INTO rptas_table (pin, districtcode, brgycode, sectioncode, parcelid, pluscode, title, titledate, surveynumber, lotnumber, blknumber, area, boundary, ownername, oct, octdate, prevtct, tctdate, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)",
+      [
+        pin,
+        districtCode,
+        brgyCode,
+        sectionCode,
+        parcelCode,
+        plusCode,
+        title,
+        titleDate,
+        surveyNumber,
+        lotNumber,
+        blkNumber,
+        area,
+        boundary,
+        ownerName,
+        oct,
+        octDate,
+        tct,
+        tctDate,
+        status,
+      ]
     );
 
-    console.log('PIN SAVED');
+    console.log("PIN SAVED");
     res.json({ status: "ok" });
   } catch (error) {
-    console.error('Error saving PIN:', error);
+    console.error("Error saving PIN:", error);
     res.status(500).json({ status: "error" });
   }
 });
 
-app.get('/checkPin/:pin', async (req, res) => {
+app.get("/checkPin/:pin", async (req, res) => {
   try {
     const { pin } = req.params;
 
-    const query = 'SELECT EXISTS (SELECT 1 FROM rptas_table WHERE pin = $1)';
+    const query = "SELECT EXISTS (SELECT 1 FROM rptas_table WHERE pin = $1)";
 
     const result = await pool.query(query, [pin]);
     const exists = result.rows[0].exists;
 
     res.json({ exists });
   } catch (error) {
-    console.error('Error checking PIN:', error);
+    console.error("Error checking PIN:", error);
     res.status(500).json({ exists: false });
   }
 });
 
-
-app.put('/approvedpin/:pin', async (req, res) => {
+app.put("/approvedpin/:pin", async (req, res) => {
   try {
-    console.log('Received request body:', req.body);
+    console.log("Received request body:", req.body);
     const { pin } = req.params;
     const { status } = req.body;
 
@@ -657,51 +685,95 @@ app.put('/approvedpin/:pin', async (req, res) => {
     // Execute the update query for rptas_table
     await pool.query(updateQuery, [status, pin]);
 
-    console.log('Status field in rptas_table updated successfully');
-    res.json({ status: 'ok', message: 'Status field in rptas_table updated successfully' });
+    console.log("Status field in rptas_table updated successfully");
+    res.json({
+      status: "ok",
+      message: "Status field in rptas_table updated successfully",
+    });
   } catch (error) {
-    console.error('Error updating status field in rptas_table:', error);
-    res.status(500).json({ status: 'error', message: 'Error updating status field in rptas_table' });
+    console.error("Error updating status field in rptas_table:", error);
+    res.status(500).json({
+      status: "error",
+      message: "Error updating status field in rptas_table",
+    });
   }
 });
 
-app.delete('/deleteByTitle/:title',requireAuth, async (req, res) => {
+app.delete("/deleteByTitle/:title", requireAuth, async (req, res) => {
   try {
     const { title } = req.params;
 
-   
-    const deleteQuery = 'DELETE FROM rptas_table WHERE title = $1';
+    const deleteQuery = "DELETE FROM rptas_table WHERE title = $1";
 
-  
     const result = await pool.query(deleteQuery, [title]);
 
-   
     if (result.rowCount === 1) {
       console.log(`Record with title '${title}' deleted successfully`);
-      res.json({ status: 'ok', message: `Record with title '${title}' deleted successfully` });
+      res.json({
+        status: "ok",
+        message: `Record with title '${title}' deleted successfully`,
+      });
     } else {
       console.log(`No record found with title '${title}'`);
-      res.status(404).json({ status: 'not found', message: `No record found with title '${title}'` });
+      res.status(404).json({
+        status: "not found",
+        message: `No record found with title '${title}'`,
+      });
     }
   } catch (error) {
-    console.error('Error deleting record by title:', error);
-    res.status(500).json({ status: 'error', message: 'Error deleting record by title' });
+    console.error("Error deleting record by title:", error);
+    res
+      .status(500)
+      .json({ status: "error", message: "Error deleting record by title" });
   }
 });
-
 
 //List of brgycode
-app.get("/brgycode", async function(req, res){
+app.get("/brgycode", async function (req, res) {
   try {
-      const { rows } = await pool.query('SELECT * FROM brgy_code');
-      res.json(rows);
+    const { rows } = await pool.query("SELECT * FROM brgy_code");
+    res.json(rows);
   } catch (error) {
-      console.error('Error fetching brgy_code:', error);
-      res.status(500).json({ status: "error" });
+    console.error("Error fetching brgy_code:", error);
+    res.status(500).json({ status: "error" });
   }
 });
 
+//Michael Route
+app.post("/insertSMV", async (req, res) => {
+  const rpt_geo_code = req.body.rpt_geo_code;
+  const pin = req.body.pin;
+  const area = req.body.area;
 
+  try {
+    const get_title_geom = await pool.query(
+      `SELECT the_geom FROM title_table WHERE pluscode = $1`,
+      [rpt_geo_code]
+    );
+    const title_geom_rows = get_title_geom.rows;
+    const title_geom = title_geom_rows[0].the_geom;
+
+    const get_smv_code = await pool.query(
+      "SELECT mv_2017 as smv_codes FROM marketvalues WHERE st_intersects(ST_Transform(the_geom, 4326), $1) = true",
+      [title_geom]
+    );
+    const smv_code = get_smv_code.rows;
+
+    const insertData = await pool.query(
+      "INSERT INTO smv_table (rpt_geo_code, pin, smv_code, area) VALUES ($1, $2, $3, $4)",
+      [rpt_geo_code, pin, smv_code, area]
+    );
+
+    if (insertData) {
+      res.json({ success: "Data successfully saved" });
+    } else {
+      res.json({ error: "No signature uploaded" });
+    }
+  } catch (error) {
+    console.error("Error executing SQL query", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // let port = process.env.PORT || 5000;
 // app.listen(port, function() {

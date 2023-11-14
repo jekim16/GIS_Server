@@ -739,25 +739,6 @@ app.get("/brgycode", async function (req, res) {
   }
 });
 
-//Michael Route
-app.post("/insertSMV", async (req, res) => {
-  const rpt_geo_code = req.body.rpt_geo_code;
-  const pin = req.body.pin;
-  const smv_code = [];
-  const area = [];
-
-  try {
-    const get_smv = await pool.query(
-      "SELECT ST_Area(ST_Intersection(ST_Transform(a.the_geom, 4326)::geography, ST_Transform(b.the_geom, 4326)::geography)) AS intersection_area, b.title, a.mv_2017 FROM marketvalues a, title_table b WHERE ST_Intersects (ST_Transform(a.the_geom, 4326), ST_Transform(b.the_geom, 4326)) AND b.pluscode = $1 ORDER BY mv_2017 ASC",
-      [rpt_geo_code]
-    );
-    const smv_result = get_smv.rows;
-
-    for (var x = 0; x < smv_result.length; x++) {
-      smv_code.push(smv_result[x].mv_2017);
-      area.push(smv_result[x].intersection_area);
-    }
-    
 //Micheal ROUTE
 app.post("/insertSMV", async (req, res) => {
   const rpt_geo_code = req.body.rpt_geo_code;
